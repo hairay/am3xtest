@@ -9,3 +9,7 @@ cat /proc/cpuinfo
 sudo ./am3xtest-???
 
 在am3xtest.ini裡面如果有開啟read or write printer為1，就會自動讀取系統版與printer的logs，不需要執行兩次。
+
+[2019/09/16]
+修改am3xtest.desktop裡面的路徑到正確位置
+Exec=/home/???/am3xtest/linux/am3xtest.sh

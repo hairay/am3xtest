@@ -1,6 +1,8 @@
-#!/bin/sh
+#!/bin/bash
 
 uname -m
+cd `dirname $0`
+
 case `uname -m` in
   arm64|aarch64|aarch64_be|armv8b|armv8l)
     echo "arm64"
