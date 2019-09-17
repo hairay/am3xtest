@@ -1,0 +1,28 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [                
+                "C:/gcc-linaro-4.9.4-2017.01-i686-mingw32_arm-linux-gnueabihf/bin/../lib/gcc/arm-linux-gnueabihf/4.9.4/../../../../arm-linux-gnueabihf/include/c++/4.9.4", 
+                "C:/gcc-linaro-4.9.4-2017.01-i686-mingw32_arm-linux-gnueabihf/bin/../lib/gcc/arm-linux-gnueabihf/4.9.4/../../../../arm-linux-gnueabihf/include/c++/4.9.4/arm-linux-gnueabihf/.", 
+                "C:/gcc-linaro-4.9.4-2017.01-i686-mingw32_arm-linux-gnueabihf/bin/../lib/gcc/arm-linux-gnueabihf/4.9.4/../../../../arm-linux-gnueabihf/include/c++/4.9.4/backward", 
+                "C:/gcc-linaro-4.9.4-2017.01-i686-mingw32_arm-linux-gnueabihf/bin/../lib/gcc/arm-linux-gnueabihf/4.9.4/include", 
+                "C:/gcc-linaro-4.9.4-2017.01-i686-mingw32_arm-linux-gnueabihf/bin/../lib/gcc/arm-linux-gnueabihf/4.9.4/include-fixed", 
+                "C:/gcc-linaro-4.9.4-2017.01-i686-mingw32_arm-linux-gnueabihf/bin/../lib/gcc/arm-linux-gnueabihf/4.9.4/../../../../arm-linux-gnueabihf/include", 
+                "C:/gcc-linaro-4.9.4-2017.01-i686-mingw32_arm-linux-gnueabihf/bin/../arm-linux-gnueabihf/libc/usr/include/linux",
+                "C:/gcc-linaro-4.9.4-2017.01-i686-mingw32_arm-linux-gnueabihf/bin/../arm-linux-gnueabihf/libc/usr/include"                
+            ],
+            "defines": [
+            	"__arm__", 
+                "__USE_GNU", 
+                "__ARM_PCS_VFP"
+            ],
+            "windowsSdkVersion": "10.0.17134.0",
+            "compilerPath": "C:/gcc-linaro-4.9.4-2017.01-i686-mingw32_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-gcc.exe",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "${default}"
+        }
+    ],
+    "version": 4
+}

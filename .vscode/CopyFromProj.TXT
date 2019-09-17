@@ -1,0 +1,1 @@
+Please copy work/proj/c_cpp_properties.json to this directory.

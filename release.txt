@@ -1,0 +1,11 @@
+﻿[2019/09/16]
+
+需根據CPU執行不同的am3xtest
+cat /proc/cpuinfo
+
+
+直接讀取log存到檔案
+如果有連到機台，但無法讀取logs到檔案，需要使用root權限執行am3xtest試試看
+sudo ./am3xtest-???
+
+在am3xtest.ini裡面如果有開啟read or write printer為1，就會自動讀取系統版與printer的logs，不需要執行兩次。

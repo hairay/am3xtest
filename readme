@@ -1,0 +1,9 @@
+1.     Install cross compiler
+sudo apt-get install g++-mips64el-linux-gnuabi64
+sudo apt-get install g++-aarch64-linux-gnu
+sudo apt-get install g++-arm-linux-gnueabihf
+
+2. run build.sh
+./build.sh
+沒有錯誤的話，在linux目錄就會產出需要的檔案
+
