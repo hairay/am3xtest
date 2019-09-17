@@ -7,6 +7,7 @@
 #include <sys/msg.h>
 #include <sys/sem.h>
 #include <sys/shm.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <ctype.h>
@@ -264,7 +265,7 @@ int main(int argc, char** argv)
     signal(SIGTERM, ExitAm3xtestEvent);
     signal(SIGINT, ExitAm3xtestEvent);
     signal(SIGKILL, ExitAm3xtestEvent);
-    
+    umask(0000);    
     while(1)
     {
         usbHandle = usb_open(usb_match_func);
