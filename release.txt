@@ -21,3 +21,5 @@ Exec=/home/???/am3xtest/linux/am3xtest.sh
 修改存檔的mode為rw-rw-rw-
 -rw-rw-rw-. 1 root root  19539 Sep 17 14:34 test_20190917_143453.txt
 
+[2019/09/18]
+fix exit procedure

@@ -33,12 +33,12 @@ typedef struct
 } stDateTimePara;
 
 static int gLogFileHandle[2];
-static usb_handle *gUsbHandle = NULL;
 static Uint16 gVid, gPid;
 static int gScanDevTimes = 0;
 static int gIsPrinter[2] = {0, 1};
 static sem_t *gSem = NULL;
 static int gSemCount;
+static int gExitAm3xtest = 0;
 
 static int SeizeSYSControl()
 {
@@ -131,11 +131,17 @@ int ReadDbg(usb_handle *usbHandle)
     stScsiDebugFormat dbgInfo;
     unsigned long bufSize;
 
-    while(ret > 0)
+    while(ret > 0 && gExitAm3xtest == 0)
     {
         zeroCount = 0;
         for(i=0 ; i < gScanDevTimes; i++)
         {
+            if(gExitAm3xtest)
+            {
+                zeroCount = 0;
+                i= gScanDevTimes;
+                break;
+            }
             ret = read_dbg_data(usbHandle,(char *)&dbgInfo,sizeof(stScsiDebugFormat), FRTYPE_DEBUG, gIsPrinter[i]);
             //printf("ret :%d max_bytes_per_line=%d read_line=%d isPrinter=%d\n", ret, dbgInfo.max_bytes_per_line, dbgInfo.read_line, gIsPrinter[i]);
             if(ret > 0 && dbgInfo.read_line == 0)
@@ -171,7 +177,7 @@ int ReadDbg(usb_handle *usbHandle)
         if(zeroCount == gScanDevTimes)
             MsSleep(100);
     }
-    usb_close(usbHandle);
+    
     return ret;
 }
 
@@ -204,28 +210,14 @@ int usb_match_func(usb_ifc_info *ifc)
 
 static void ExitAm3xtestEvent(int signum)
 {
-    int i;
-
-    if(gUsbHandle != NULL)
-        usb_close(gUsbHandle);
-
     if(gLogFileHandle[0] >=  0)
     {
         char temp[512];
 
-        sprintf(temp, "exit AM3XTEST signum=%d\n",signum);
+        sprintf(temp, "AM3XTEST exit:%d signum=%d\n",gExitAm3xtest, signum);
         write(gLogFileHandle[0], temp, strlen(temp));
     }
-    for(i=0; i<gScanDevTimes; i++)
-        if(gLogFileHandle[i] >=  0)
-            close(gLogFileHandle[i]);
-
-    gScanDevTimes =0;
-    sem_unlink("AM3XTEST");
-    sem_close(gSem);
-    sem_destroy(gSem);
-    
-    exit(0);
+    gExitAm3xtest ++;
 }
 
 int ClockUCO_GetCurrentTime(stDateTimePara * date)
@@ -255,6 +247,7 @@ int main(int argc, char** argv)
     char path[256];
     char id[64];
     char *current_dir;
+    int i;
 
     gSem = sem_open ("AM3XTEST", O_CREAT, 0644, 1);
 
@@ -266,15 +259,14 @@ int main(int argc, char** argv)
     signal(SIGINT, ExitAm3xtestEvent);
     signal(SIGKILL, ExitAm3xtestEvent);
     umask(0000);    
-    while(1)
+    while(gExitAm3xtest == 0)
     {
         usbHandle = usb_open(usb_match_func);
         if(usbHandle)
         {
             char logName[256], data[16];
             stDateTimePara recordTime;
-            int isPrinter;
-            int i;
+            int isPrinter;            
 
             sprintf(logName, "%s/am3xtest.ini", current_dir);
             get_private_profile_string(NULL, "VID", "0000", (char *)data, 16, logName);
@@ -295,10 +287,10 @@ int main(int argc, char** argv)
                 sprintf(logName, "%s/print_%04d%02d%02d_%02d%02d%02d.txt", current_dir, recordTime.year, recordTime.mon, recordTime.date, recordTime.hour, recordTime.min, recordTime.sec);
                 gLogFileHandle[1] = open(logName, O_RDWR| O_CREAT| O_APPEND, 00666);
             }
-
-            gUsbHandle = usbHandle;
+            
             ReadDbg(usbHandle);
-            gUsbHandle = NULL;
+            usb_close(usbHandle);
+            usbHandle = NULL;
             for(i=0; i<gScanDevTimes; i++)
             {
                 if(gLogFileHandle[i] >= 0)
@@ -314,6 +306,19 @@ int main(int argc, char** argv)
             gScanDevTimes = 0;
         }
     }
-    MsSleep(10);
+
+    if(usbHandle != NULL)
+    {
+        usb_close(usbHandle);
+        free(usbHandle);
+    }
+    for(i=0; i<gScanDevTimes; i++)
+        if(gLogFileHandle[i] >=  0)
+            close(gLogFileHandle[i]);
+    
+    sem_unlink("AM3XTEST");
+    sem_close(gSem);
+    sem_destroy(gSem);
+
     return 0;
 }
