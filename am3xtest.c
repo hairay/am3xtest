@@ -274,7 +274,8 @@ int main(int argc, char** argv)
             get_private_profile_string(NULL, "PID", "0000", (char *)data, 16, logName);
             gPid = strtoul((char *)data, NULL, 16);
             isPrinter = get_private_profile_int(NULL, "read or write printer", 0, logName);
-            printf("am3xtest.ini: gVid=0x%x gPid=0x%x gIsPrinter=%d\n", gVid, gPid, isPrinter);
+            printf("am3xtest.ini: gVid=0x%x gPid=0x%x Printer=%d\n", gVid, gPid, isPrinter);
+            printf("Press Ctrl + C to exit am3xtest\n");
             gScanDevTimes = 1;
             if(isPrinter)
                 gScanDevTimes ++;
