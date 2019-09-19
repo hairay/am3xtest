@@ -290,6 +290,7 @@ int main(int argc, char** argv)
             
             ReadDbg(usbHandle);
             usb_close(usbHandle);
+			free(usbHandle);
             usbHandle = NULL;
             for(i=0; i<gScanDevTimes; i++)
             {
