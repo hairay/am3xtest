@@ -87,6 +87,7 @@ int read_dbg_data(usb_handle *usbHandle,char *buf,unsigned int size, unsigned ch
         read_cmd[0]	 = SCSI_CMD_PRINTER_READ;
 
     SeizeSYSControl();
+	usbHandle->desc = open(usbHandle->fname, O_RDWR);
     write_bytes = usb_write(usbHandle, (const void *)read_cmd, sizeof(read_cmd));
     if( write_bytes <= 0)
     {
@@ -119,6 +120,8 @@ int read_dbg_data(usb_handle *usbHandle,char *buf,unsigned int size, unsigned ch
     if(read_bytes)
         sts = temp[read_bytes-1];
     //printf("sts=%d: read_bytes=%d\n",sts,read_bytes);
+	close(usbHandle->desc);
+	usbHandle->desc = -1;
     ReleaseSYSControl();
     return (sts==SCSI_RET_OK)? retSize :-1;
 
@@ -130,7 +133,9 @@ int ReadDbg(usb_handle *usbHandle)
     char *log, dummy[256];
     stScsiDebugFormat dbgInfo;
     unsigned long bufSize;
-
+	
+	close(usbHandle->desc);
+	usbHandle->desc = -1;
     while(ret > 0 && gExitAm3xtest == 0)
     {
         zeroCount = 0;
