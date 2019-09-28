@@ -142,9 +142,7 @@ int ReadDbg(usb_handle *usbHandle)
     char *log, dummy[256];
     stScsiDebugFormat dbgInfo;
     unsigned long bufSize;
-	
-	close(usbHandle->desc);
-	usbHandle->desc = -1;
+		
     while(ret > 0 && gExitAm3xtest == 0)
     {
         zeroCount = 0;
@@ -279,7 +277,15 @@ int main(int argc, char** argv)
     umask(0000);    
     while(gExitAm3xtest == 0)
     {
+		SeizeSYSControl();
         usbHandle = usb_open(usb_match_func);
+		if(usbHandle)
+		{	
+			close(usbHandle->desc);
+			usbHandle->desc = -1;
+		}
+		ReleaseSYSControl();
+		
         if(usbHandle)
         {
             char logName[256], data[16];            
