@@ -315,7 +315,7 @@ int usb_write(usb_handle *h, const void *_data, int len)
     struct usbdevfs_bulktransfer bulk;
     int n;
 
-    if(h->ep_out == 0) {
+    if(h->ep_out == 0 || h->desc == -1) {
         return -1;
     }
 
@@ -365,7 +365,7 @@ int usb_read(usb_handle *h, void *_data, int len)
     struct usbdevfs_bulktransfer bulk;
     int n, retry;
 
-    if(h->ep_in == 0) {
+    if(h->ep_in == 0 || h->desc == -1) {
         return -1;
     }
 

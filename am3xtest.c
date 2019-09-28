@@ -69,7 +69,7 @@ int ReleaseSYSControl()
     }
     else
     {
-        printf("sem_post failed.(%d)", errno);
+        printf("sem_post failed.(%d) gSemCount=%d", errno, gSemCount);
         return  errno;
     }
 }
@@ -88,25 +88,31 @@ int read_dbg_data(usb_handle *usbHandle,char *buf,unsigned int size, unsigned ch
 
     SeizeSYSControl();
 	usbHandle->desc = open(usbHandle->fname, O_RDWR);
+	
+	if(usbHandle->desc == -1)
+	{
+		printf("open %s: %s\n", usbHandle->fname, strerror(errno));
+	}
+		
     write_bytes = usb_write(usbHandle, (const void *)read_cmd, sizeof(read_cmd));
-    if( write_bytes <= 0)
+    if( write_bytes <= 0 || write_bytes != sizeof(read_cmd))
     {
+		close(usbHandle->desc);
+		usbHandle->desc = -1;
         ReleaseSYSControl();
+		printf("write_bytes %d: %s\n", write_bytes, strerror(errno));
         return -1;
-    }
-    if(write_bytes != sizeof(read_cmd) )
-    {
-        ReleaseSYSControl();
-        return -1;
-    }
+    }    
 
     retSize = 0;
     while(size >0)
     {
         read_bytes = usb_read(usbHandle, (void *)(buf+retSize), size);
         if(read_bytes <=0)
+		{
+			printf("read_bytes %d: %s\n", read_bytes, strerror(errno));
             break;
-
+		}
         if(read_bytes)
         {
             retSize += read_bytes;
@@ -119,7 +125,10 @@ int read_dbg_data(usb_handle *usbHandle,char *buf,unsigned int size, unsigned ch
         read_bytes = usb_read(usbHandle, (void *)temp, sizeof(temp));
     if(read_bytes)
         sts = temp[read_bytes-1];
-    //printf("sts=%d: read_bytes=%d\n",sts,read_bytes);
+	if(sts != SCSI_RET_OK)
+	{
+		printf("sts=%d: read_bytes=%d\n",sts,read_bytes);
+	}
 	close(usbHandle->desc);
 	usbHandle->desc = -1;
     ReleaseSYSControl();
@@ -147,9 +156,11 @@ int ReadDbg(usb_handle *usbHandle)
                 i= gScanDevTimes;
                 break;
             }
-            ret = read_dbg_data(usbHandle,(char *)&dbgInfo,sizeof(stScsiDebugFormat), FRTYPE_DEBUG, gIsPrinter[i]);
-            //printf("ret :%d max_bytes_per_line=%d read_line=%d isPrinter=%d\n", ret, dbgInfo.max_bytes_per_line, dbgInfo.read_line, gIsPrinter[i]);
-            if(ret > 0 && dbgInfo.read_line == 0)
+			dbgInfo.read_line = 0;
+            ret = read_dbg_data(usbHandle,(char *)&dbgInfo,sizeof(stScsiDebugFormat), FRTYPE_DEBUG, gIsPrinter[i]);		
+			if(ret < 0)		
+				printf("ret :%d read_line=%d \n", ret, dbgInfo.read_line);
+            if(dbgInfo.read_line == 0)
                 zeroCount ++;
             while(ret > 0 && dbgInfo.read_line > 0)
             {
@@ -248,29 +259,30 @@ int ClockUCO_GetCurrentTime(stDateTimePara * date)
 
 int main(int argc, char** argv)
 {
+	stDateTimePara recordTime;
     usb_handle *usbHandle = NULL;
+	char old_dev_path[64] = {0};
     char path[256];
     char id[64];
     char *current_dir;
     int i;
 
     gSem = sem_open ("AM3XTEST", O_CREAT, 0644, 1);
-
+		
     sprintf(id, "/proc/%d/exe", getpid());
     readlink(id, path, 255);
     current_dir = dirname(path);
 
     signal(SIGTERM, ExitAm3xtestEvent);
     signal(SIGINT, ExitAm3xtestEvent);
-    signal(SIGKILL, ExitAm3xtestEvent);
+    
     umask(0000);    
     while(gExitAm3xtest == 0)
     {
         usbHandle = usb_open(usb_match_func);
         if(usbHandle)
         {
-            char logName[256], data[16];
-            stDateTimePara recordTime;
+            char logName[256], data[16];            
             int isPrinter;            
 
             sprintf(logName, "%s/am3xtest.ini", current_dir);
@@ -284,8 +296,11 @@ int main(int argc, char** argv)
             gScanDevTimes = 1;
             if(isPrinter)
                 gScanDevTimes ++;
-
-            ClockUCO_GetCurrentTime(&recordTime);
+			if(strcmp(old_dev_path, usbHandle->fname))
+			{
+				ClockUCO_GetCurrentTime(&recordTime);
+				strcpy(old_dev_path, usbHandle->fname);
+			}
             sprintf(logName, "%s/test_%04d%02d%02d_%02d%02d%02d.txt", current_dir, recordTime.year, recordTime.mon, recordTime.date, recordTime.hour, recordTime.min, recordTime.sec);
             gLogFileHandle[0] = open(logName, O_RDWR| O_CREAT| O_APPEND, 00666);
             if(isPrinter)
@@ -305,7 +320,8 @@ int main(int argc, char** argv)
                     close(gLogFileHandle[i]);
                     gLogFileHandle[i] = -1;
                 }
-            }
+            }			
+			printf("Exit ReadDbg\n");
         }
         else
         {
@@ -322,10 +338,10 @@ int main(int argc, char** argv)
     for(i=0; i<gScanDevTimes; i++)
         if(gLogFileHandle[i] >=  0)
             close(gLogFileHandle[i]);
-    
-    sem_unlink("AM3XTEST");
+        
     sem_close(gSem);
     sem_destroy(gSem);
-
+	//sem_unlink("AM3XTEST");
+	
     return 0;
 }
