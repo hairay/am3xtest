@@ -1,0 +1,12 @@
+nvram read address 0x30 length 16 text
+nvram write address 0x30 length 16 text AVISION
+nvram write address 0x30 length 16 text Avision
+
+nvram read address 0x60 length 2 loop 2 lsb hex
+nvram write address 0x60 length 2 loop 2 lsb hex 0637 2ECC
+nvram write address 0x60 length 2 loop 2 lsb hex 0638 2ECD
+
+
+loglevel read
+loglevel write 0x12345678
+loglevel write 0xFFFFFFFF
