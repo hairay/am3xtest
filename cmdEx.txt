@@ -6,6 +6,9 @@ nvram read address 0x60 length 2 loop 2 lsb hex
 nvram write address 0x60 length 2 loop 2 lsb hex 0637 2ECC
 nvram write address 0x60 length 2 loop 2 lsb hex 0638 2ECD
 
+nvram read address 0x70 length 1 loop 6 hex
+nvram write address 0x70 length 1 loop 6 hex  0 2 32 F1 F2 0
+
 
 loglevel read
 loglevel write 0x12345678
