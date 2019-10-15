@@ -40,6 +40,7 @@ static int gIsPrinter[2] = {0, 1};
 static sem_t *gSem = NULL;
 static int gSemCount;
 static int gExitAm3xtest = 0;
+static int gSaveLogLevel = 0;
 
 static int SeizeSYSControl()
 {
@@ -236,6 +237,27 @@ int ReadDbg(usb_handle *usbHandle)
                     bufSize = ret;
                     while(bufSize)
                     {
+                        Uint8 check;
+                        Uint32 level = 0;
+                        char strTmp[64];
+
+                        check = (pBuf[dbgInfo.max_bytes_per_line-6]);			
+                        if(check == 0xC1)                                                            		
+                            level = *((Uint32 *)&pBuf[dbgInfo.max_bytes_per_line - 4]);     
+
+                        if(gSaveLogLevel)
+                        {                                                                               
+                            sprintf(strTmp, "[%08X]", level);
+				            write(gLogFileHandle[i], strTmp, strlen(strTmp));
+                        }
+                        else
+                        {
+                            if(level>0 && level <= 0x3)
+                            {
+                                sprintf(strTmp, "Next Line Is Error Level\n");
+                                write(gLogFileHandle[i], strTmp, strlen(strTmp));
+                            }
+                        }
                         write(gLogFileHandle[i], pBuf, strlen(pBuf));
                         pBuf += dbgInfo.max_bytes_per_line;
                         bufSize -= dbgInfo.max_bytes_per_line;
@@ -680,8 +702,9 @@ int main(int argc, char** argv)
             gVid = strtoul((char *)data, NULL, 16);
             get_private_profile_string(NULL, "PID", "0000", (char *)data, 16, logName);
             gPid = strtoul((char *)data, NULL, 16);
+            gSaveLogLevel = get_private_profile_int(NULL, "save debug level", 0, logName);
             isPrinter = get_private_profile_int(NULL, "read or write printer", 0, logName);
-            printf("am3xtest.ini: gVid=0x%x gPid=0x%x Printer=%d\n", gVid, gPid, isPrinter);
+            printf("am3xtest.ini: gVid=0x%x gPid=0x%x Printer=%d LogLevel=%d\n", gVid, gPid, isPrinter, gSaveLogLevel);
             printf("Press Ctrl + C to exit am3xtest\n");
             gScanDevTimes = 1;
             if(isPrinter)
