@@ -384,8 +384,8 @@ int CheckFixedItem(char *pToken)
 int GetDataFromStr(char *inStrPtr)
 {
     int num =0, mapVal, lastMapVal = -1;
-    char *pToken, *saveptr;
-    int maxVal = 64;
+    char *pToken, *saveptr, *endptr;
+    int maxVal = 64, status =0;
 
     memset(&cmdInfo.cmd, 0, sizeof(int) * 12);
     cmdInfo.loop = 1;
@@ -400,7 +400,12 @@ int GetDataFromStr(char *inStrPtr)
         if((lastMapVal & 0xF0000) ==  0x30000 && (lastMapVal & 0xF) <= 2)
         {
             int *addr = &cmdInfo.address;
-            addr[lastMapVal & 0xF] = strtol(pToken, NULL, 0);
+            addr[lastMapVal & 0xF] = strtol(pToken, &endptr, 0);
+            if(endptr[0] != 0)
+            {
+                addr[lastMapVal & 0xF] = -1;
+                status = -1;
+            }                
         }
         else if(mapVal == -1)
         {
@@ -413,19 +418,26 @@ int GetDataFromStr(char *inStrPtr)
                 if(num ==0)
                     strcpy(cmdInfo.txtData, pToken);
                 if(cmdInfo.hex)
-                    cmdInfo.data[num] = strtol(pToken, NULL, 16);
+                    cmdInfo.data[num] = strtol(pToken, &endptr, 16);
                 else
-                    cmdInfo.data[num] = strtol(pToken, NULL, 0);
-                num ++;
-                if(num >= maxVal)
-                    break;
+                    cmdInfo.data[num] = strtol(pToken, &endptr, 0);
+                
+                if(endptr[0] ==0)
+                {
+                    num ++;
+                    if(num >= maxVal)
+                        break;
+                }
             }
         }
         lastMapVal = mapVal;
         pToken = strtok_r(NULL, " ,;\n", &saveptr);
     }
     cmdInfo.dataCnt = num;
-    return num;
+    if(cmdInfo.cmd == -1 && status == 0)
+        status = -1;
+
+    return status;
 }
 
 int DoNvramWrite(usb_handle *usbHandle, int isWrite)
@@ -444,9 +456,9 @@ int DoNvramWrite(usb_handle *usbHandle, int isWrite)
     wAddress = cmdInfo.address;
     if(m_unit_length > 4)
         m_enable_text = 1;
-    printf("addr=0x%x length=%d loop=%d\n", wAddress, m_unit_length, m_unit_loop);
-    printf("isText=%d isLsb=%d isHex=%d\n", m_enable_text, m_enable_lsb, m_enable_hex);
-    if(wAddress >= 0xFFFF || m_unit_length == 0)
+    printf("--> addr=0x%x length=%d loop=%d\n", wAddress, m_unit_length, m_unit_loop);
+    printf("--> isText=%d isLsb=%d isHex=%d\n", m_enable_text, m_enable_lsb, m_enable_hex);
+    if(wAddress >= 0xFFFF || m_unit_length <= 0 || m_unit_loop <= 0)
         status = -1;
     if(m_enable_text && m_unit_loop > 1)
         status = -1;
@@ -507,7 +519,7 @@ int DoNvramWrite(usb_handle *usbHandle, int isWrite)
         status = send_dbg_data(usbHandle,posData,2,SCSI_SDTC_NVRAM_POINTER, 0,cmdInfo.printer);
         if(status > 0)
             status = send_dbg_data(usbHandle,(char *)data,m_unit_length*m_unit_loop,SCSI_SDTC_NVRAM, 0,cmdInfo.printer); 
-        printf("write nvram status=%d\n", status);           
+        printf("--> write nvram status=%d\n", status);           
     }
     else if(status == 0)
     {
@@ -570,7 +582,7 @@ int DoNvramWrite(usb_handle *usbHandle, int isWrite)
                                             
             }            
         }
-        printf("read nvram = %s status=%d\n", szShow, status);
+        printf("--> read nvram = %s\n", szShow);
     }
     return status;
 }
@@ -581,34 +593,43 @@ void* CmdParser(void* data)
     char *linePtr = NULL;
     size_t len = 0;
     ssize_t nread;
+    int status;
 
     while(gExitAm3xtest == 0)
     {
+        int retApi ;
+
         nread  = getline(&linePtr, &len, stdin);
         if(nread)
         {
-            nread = GetDataFromStr(linePtr);
-            if(cmdInfo.cmd == 1) //logLevel
+            status = GetDataFromStr(linePtr);
+            
+            if(status == 0 && cmdInfo.cmd == 1) //logLevel
             {
                 Uint32 dbgLevel;
-                int retApi;
 
+                retApi = -1;
                 dbgLevel = cmdInfo.data[0];
                 if(cmdInfo.action == 0)
                 {
                     retApi = read_dbg_data(usbHandle,(char *)&dbgLevel,sizeof(dbgLevel),SCSI_RDTC_FLASH_DATA, FRTYPE_DEBUG_LEVEL,cmdInfo.printer);
-                    printf("read loglevel = 0x%08X retApi=%d\n", dbgLevel, retApi);
+                    printf("--> read loglevel = 0x%08X\n", dbgLevel);
                 }
                 else if(cmdInfo.action == 1 && cmdInfo.dataCnt == 1)
                 {
                     retApi = send_dbg_data(usbHandle,(char *)&dbgLevel,sizeof(dbgLevel),SCSI_SDTC_FLASH, FRTYPE_DEBUG_LEVEL,cmdInfo.printer);
-                    printf("write loglevel = 0x%08X retApi=%d\n", dbgLevel, retApi);
-                }
+                    printf("--> write loglevel = 0x%08X \n", dbgLevel);
+                }                
+                if(retApi <= 0)                
+                    status = -1;                                               
             }
-            else if(cmdInfo.cmd == 0) //nvram
+            else if(status == 0 && cmdInfo.cmd == 0) //nvram
             {
-                DoNvramWrite(usbHandle, cmdInfo.action);
+                status = DoNvramWrite(usbHandle, cmdInfo.action);
             }
+            if(status < 0)
+                printf("--> command error or execute fail %d\n", status);
+
         }
     }
     if(linePtr)
