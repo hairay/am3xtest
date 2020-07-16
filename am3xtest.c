@@ -34,7 +34,7 @@ typedef struct
 } stDateTimePara;
 
 static int gLogFileHandle[2];
-static Uint16 gVid, gPid;
+static Uint16 gVid = 0, gPid;
 static int gScanDevTimes = 0;
 static int gIsPrinter[2] = {0, 1};
 static sem_t *gSem = NULL;
@@ -669,6 +669,7 @@ int main(int argc, char** argv)
     char *current_dir;
     int i;
     pthread_t threadID;
+    char logName[256], data[16];
 
     gSem = sem_open ("AM3XTEST", O_CREAT, 0644, 1);
 
@@ -678,7 +679,14 @@ int main(int argc, char** argv)
 
     signal(SIGTERM, ExitAm3xtestEvent);
     signal(SIGINT, ExitAm3xtestEvent);
-
+    if(gVid == 0)
+    {
+        sprintf(logName, "%s/am3xtest.ini", current_dir);
+        get_private_profile_string(NULL, "VID", "0000", (char *)data, 16, logName);
+        gVid = strtoul((char *)data, NULL, 16);
+        get_private_profile_string(NULL, "PID", "0000", (char *)data, 16, logName);
+        gPid = strtoul((char *)data, NULL, 16);
+    }
     umask(0000);
     while(gExitAm3xtest == 0)
     {
@@ -693,11 +701,9 @@ int main(int argc, char** argv)
         ReleaseSYSControl();
 
         if(usbHandle)
-        {
-            char logName[256], data[16];
+        {            
             int isPrinter;
-
-            sprintf(logName, "%s/am3xtest.ini", current_dir);
+            
             get_private_profile_string(NULL, "VID", "0000", (char *)data, 16, logName);
             gVid = strtoul((char *)data, NULL, 16);
             get_private_profile_string(NULL, "PID", "0000", (char *)data, 16, logName);

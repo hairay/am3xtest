@@ -48,7 +48,7 @@
 #include <linux/usb_ch9.h>
 #endif
 #include <asm/byteorder.h>
-
+#include <sys/sysmacros.h>
 #include "usbapi.h"
 
 #define MAX_RETRIES 5
