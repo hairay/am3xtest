@@ -90,7 +90,7 @@ int read_dbg_data(usb_handle *usbHandle,char *buf,unsigned int size, unsigned ch
 
     SeizeSYSControl();
     usbHandle->desc = open(usbHandle->fname, O_RDWR);
-
+    usb_claim_interface(usbHandle);
     if(usbHandle->desc == -1)
     {
         printf("open %s: %s\n", usbHandle->fname, strerror(errno));
@@ -152,7 +152,7 @@ int send_dbg_data(usb_handle *usbHandle,char *buf,unsigned int size, unsigned ch
 
     SeizeSYSControl();
     usbHandle->desc = open(usbHandle->fname, O_RDWR);
-
+    usb_claim_interface(usbHandle);
     if(usbHandle->desc == -1)
     {
         printf("open %s: %s\n", usbHandle->fname, strerror(errno));

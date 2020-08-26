@@ -289,6 +289,7 @@ static usb_handle *find_usb_device(const char *base, ifc_match_func callback)
                 usb->ep_in = in;
                 usb->ep_out = out;
                 usb->desc = fd;
+                usb->ifc = ifc;
 
                 n = ioctl(fd, USBDEVFS_CLAIMINTERFACE, &ifc);
                 if(n != 0) {
@@ -306,6 +307,13 @@ static usb_handle *find_usb_device(const char *base, ifc_match_func callback)
     closedir(busdir);
 
     return usb;
+}
+
+int usb_claim_interface(usb_handle *h)
+{
+    int n;    
+    n = ioctl(h->desc, USBDEVFS_CLAIMINTERFACE, &h->ifc);
+    return n;
 }
 
 int usb_write(usb_handle *h, const void *_data, int len)

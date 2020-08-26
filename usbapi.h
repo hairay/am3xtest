@@ -5,6 +5,7 @@ struct usb_handle
 {
     char fname[64];
     int desc;
+    int ifc;
     unsigned char ep_in;
     unsigned char ep_out;
 };
@@ -42,5 +43,5 @@ usb_handle *usb_open(ifc_match_func callback);
 int usb_close(usb_handle *h);
 int usb_read(usb_handle *h, void *_data, int len);
 int usb_write(usb_handle *h, const void *_data, int len);
-
+int usb_claim_interface(usb_handle *h);
 #endif // __USB_H__
