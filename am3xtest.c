@@ -34,7 +34,7 @@ typedef struct
 } stDateTimePara;
 
 static int gLogFileHandle[2];
-static Uint16 gVid = 0, gPid;
+static Uint16 gVid = 0, gPid, gClass;
 static int gScanDevTimes = 0;
 static int gIsPrinter[2] = {0, 1};
 static sem_t *gSem = NULL;
@@ -47,7 +47,7 @@ static int SeizeSYSControl()
     struct timespec tm;
 
     clock_gettime(CLOCK_REALTIME, &tm);
-    tm.tv_sec += 30;
+    tm.tv_sec += 300;
 
     if (sem_timedwait(gSem, &tm) == 0)
     {
@@ -88,7 +88,8 @@ int read_dbg_data(usb_handle *usbHandle,char *buf,unsigned int size, unsigned ch
     if(isPrinter)
         read_cmd[0]	 = SCSI_CMD_PRINTER_READ;
 
-    SeizeSYSControl();
+    if(SeizeSYSControl() != 0)
+        return -1;
     usbHandle->desc = open(usbHandle->fname, O_RDWR);
     usb_claim_interface(usbHandle);
     if(usbHandle->desc == -1)
@@ -150,7 +151,8 @@ int send_dbg_data(usb_handle *usbHandle,char *buf,unsigned int size, unsigned ch
     if(isPrinter)
         send_cmd[0]	 = SCSI_CMD_PRINTER_SEND;
 
-    SeizeSYSControl();
+    if(SeizeSYSControl() != 0)
+        return -1;
     usbHandle->desc = open(usbHandle->fname, O_RDWR);
     usb_claim_interface(usbHandle);
     if(usbHandle->desc == -1)
@@ -295,6 +297,9 @@ int usb_match_func(usb_ifc_info *ifc)
         return -1;
 
     if(gPid != 0 && gPid != ifc->dev_product)
+        return -1;
+
+    if(gClass != 0 && gClass != ifc->ifc_class)
         return -1;
 
     if(ifc->ifc_class == 6 || ifc->ifc_class == 0xFF)
@@ -686,19 +691,19 @@ int main(int argc, char** argv)
         gVid = strtoul((char *)data, NULL, 16);
         get_private_profile_string(NULL, "PID", "0000", (char *)data, 16, logName);
         gPid = strtoul((char *)data, NULL, 16);
+        get_private_profile_string(NULL, "Class", "0000", (char *)data, 16, logName);
+        gClass = strtoul((char *)data, NULL, 16);
     }
     umask(0000);
     while(gExitAm3xtest == 0)
-    {
-        SeizeSYSControl();
+    {        
         usbHandle = usb_open(usb_match_func);
         if(usbHandle)
         {
             close(usbHandle->desc);
             usbHandle->desc = -1;
-            pthread_create(&threadID, NULL, CmdParser, usbHandle); // 建立子執行緒
-        }
-        ReleaseSYSControl();
+            pthread_create(&threadID, NULL, CmdParser, usbHandle);
+        }        
 
         if(usbHandle)
         {            
