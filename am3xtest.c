@@ -34,7 +34,7 @@ typedef struct
 } stDateTimePara;
 
 static int gLogFileHandle[2];
-static Uint16 gVid = 0, gPid, gClass;
+static Uint16 gVid = 0, gPid, gSubClass;
 static int gScanDevTimes = 0;
 static int gIsPrinter[2] = {0, 1};
 static sem_t *gSem = NULL;
@@ -299,7 +299,7 @@ int usb_match_func(usb_ifc_info *ifc)
     if(gPid != 0 && gPid != ifc->dev_product)
         return -1;
 
-    if(gClass != 0 && gClass != ifc->ifc_class)
+    if(gSubClass != 0 && gSubClass != ifc->dev_subclass)
         return -1;
 
     if(ifc->ifc_class == 6 || ifc->ifc_class == 0xFF)
@@ -691,8 +691,8 @@ int main(int argc, char** argv)
         gVid = strtoul((char *)data, NULL, 16);
         get_private_profile_string(NULL, "PID", "0000", (char *)data, 16, logName);
         gPid = strtoul((char *)data, NULL, 16);
-        get_private_profile_string(NULL, "Class", "0000", (char *)data, 16, logName);
-        gClass = strtoul((char *)data, NULL, 16);
+        get_private_profile_string(NULL, "SubClass", "0000", (char *)data, 16, logName);
+        gSubClass = strtoul((char *)data, NULL, 16);
     }
     umask(0000);
     while(gExitAm3xtest == 0)
