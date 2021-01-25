@@ -32,7 +32,8 @@ struct usb_ifc_info
     unsigned char has_bulk_out;
 
     unsigned char writable;
-
+    unsigned char bulk_num;
+    unsigned char interface_num;    
     char serial_number[256];
     char device_path[256];
 };

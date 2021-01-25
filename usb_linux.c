@@ -200,7 +200,8 @@ static int filter_usb_device(int fd, char *ptr, int len, int writable,
         info.ifc_class = ifc->bInterfaceClass;
         info.ifc_subclass = ifc->bInterfaceSubClass;
         info.ifc_protocol = ifc->bInterfaceProtocol;
-
+        info.bulk_num = ifc->bNumEndpoints;
+        info.interface_num = i;        
         for(e = 0; e < ifc->bNumEndpoints; e++) {
             if(check(ptr, len, USB_DT_ENDPOINT, USB_DT_ENDPOINT_SIZE))
                 return -1;
@@ -211,10 +212,13 @@ static int filter_usb_device(int fd, char *ptr, int len, int writable,
             if((ept->bmAttributes & 0x03) != 0x02)
                 continue;
 
-            if(ept->bEndpointAddress & 0x80) {
+            if(ept->bEndpointAddress & 0x80) 
+            {                
                 if(in == -1)
                     in = ept->bEndpointAddress;
-            } else {
+            } 
+            else 
+            {                
                 if(out == -1)
                     out = ept->bEndpointAddress;
             }

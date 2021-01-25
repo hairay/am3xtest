@@ -22,6 +22,8 @@
 #include "scsi_parser_dbg_ep.h"
 #include "read_write_ini.h"
 
+//#define _DEBUG_LOG_
+
 typedef struct
 {
     unsigned char sec;
@@ -34,7 +36,7 @@ typedef struct
 } stDateTimePara;
 
 static int gLogFileHandle[2];
-static Uint16 gVid = 0, gPid, gSubClass;
+static Uint16 gVid = 0, gPid, gInterfaceNum;
 static int gScanDevTimes = 0;
 static int gIsPrinter[2] = {0, 1};
 static sem_t *gSem = NULL;
@@ -288,7 +290,7 @@ int usb_match_func(usb_ifc_info *ifc)
     printf("VID :%x PID=%x\n", ifc->dev_vendor, ifc->dev_product);
     printf("device class :%x sub class=%x protocol=%x\n", ifc->dev_class, ifc->dev_subclass, ifc->dev_protocol);
     printf("interface class :%x sub class=%x protocol=%x\n", ifc->ifc_class, ifc->ifc_subclass, ifc->ifc_protocol);
-
+    printf("interface_num :%x bulk_num=%x\n", ifc->interface_num, ifc->bulk_num);
     printf("has_bulk_in :%x has_bulk_out=%x\n", ifc->has_bulk_in, ifc->has_bulk_out);
     printf("sn :%s path=%s\n", ifc->serial_number, ifc->device_path);
 #endif
@@ -299,7 +301,7 @@ int usb_match_func(usb_ifc_info *ifc)
     if(gPid != 0 && gPid != ifc->dev_product)
         return -1;
 
-    if(gSubClass != 0 && gSubClass != ifc->dev_subclass)
+    if(ifc->bulk_num ==2 && gInterfaceNum != ifc->interface_num)
         return -1;
 
     if(ifc->ifc_class == 6 || ifc->ifc_class == 0xFF)
@@ -691,8 +693,8 @@ int main(int argc, char** argv)
         gVid = strtoul((char *)data, NULL, 16);
         get_private_profile_string(NULL, "PID", "0000", (char *)data, 16, logName);
         gPid = strtoul((char *)data, NULL, 16);
-        get_private_profile_string(NULL, "SubClass", "0000", (char *)data, 16, logName);
-        gSubClass = strtoul((char *)data, NULL, 16);
+        get_private_profile_string(NULL, "InterfaceNum", "0000", (char *)data, 16, logName);
+        gInterfaceNum = strtoul((char *)data, NULL, 16);
     }
     umask(0000);
     while(gExitAm3xtest == 0)
