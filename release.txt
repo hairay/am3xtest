@@ -1,4 +1,66 @@
-﻿[2019/09/16]
+﻿[2021/01/25]
+增加InterfaceNum
+
+[2020/08/26]
+重新open device時需要claim interface
+
+[2020/07/16]
+read VID & PID at first time
+
+[2019/10/15]
+support "save debug level" in am3xtest.ini
+
+[2019/10/14]
+use command to r/w NVRAM
+use command to r/w log level
+
+使用者下command，Linux am3xtest parser command & 實際讀寫NVRAM
+Command: nvram, loglevel
+Action: read, write
+Settings: address, length, loop, text, hex, unsigned, lsb, printer
+
+<下面是執行的範例>
+[mfp@av00287-pc2 am3xtest]$ ./am3xtest
+[ scanning /dev/bus/usb/002 ]
+[ scanning /dev/bus/usb/002/001 ]
+[ scanning /dev/bus/usb/001 ]
+[ scanning /dev/bus/usb/001/006 ]
+am3xtest.ini: gVid=0x638 gPid=0x0 Printer=0
+Press Ctrl + C to exit am3xtest
+
+loglevel
+read loglevel = 0xFFFFFFFF retApi=4
+loglevel write 0x123456778
+write loglevel = 0x23456778 retApi=4
+nvram read address 0x30 length 16 text
+addr=0x30 length=16 loop=1
+isText=1 isLsb=0 isHex=0
+read nvram = Avision status=16
+nvram read address 0x60 length 2 loop 2 lsb hex
+addr=0x60 length=2 loop=2
+isText=0 isLsb=1 isHex=1
+read nvram = 638 2ECD  status=4
+
+
+[2019/09/28]
+讀資料的時候才開device檔，結束的時候立刻關device檔，讓printer monitor或其他工具可以有間隙執行
+一但呼叫sem_unlink("AM3XTEST")後，下次重新執行的am3xtest的semaphore建立是全新的系統物件ID，所以會失去不同APP的保護作用，所以這版本改成不呼叫sem_unlink，避免異常發生
+
+[2019/09/18]
+fix exit procedure
+只要按CTRL鍵+C鍵，就會跳離程式並關檔
+
+[2019/09/17]
+修改am3xtest.desktop裡面的路徑到正確位置
+Exec=/home/???/am3xtest/linux/am3xtest.sh
+
+執行方式改成下面script file
+./am3xtest.sh
+
+修改存檔的mode為rw-rw-rw-
+-rw-rw-rw-. 1 root root  19539 Sep 17 14:34 test_20190917_143453.txt
+
+[2019/09/16]
 
 需根據CPU執行不同的am3xtest
 cat /proc/cpuinfo
@@ -11,15 +73,3 @@ sudo ./am3xtest-???
 在am3xtest.ini裡面如果有開啟read or write printer為1，就會自動讀取系統版與printer的logs，不需要執行兩次。
 
 
-[2019/09/17]
-修改am3xtest.desktop裡面的路徑到正確位置
-Exec=/home/???/am3xtest/linux/am3xtest.sh
-
-執行方式改成下面script file
-./am3xtest.sh
-
-修改存檔的mode為rw-rw-rw-
--rw-rw-rw-. 1 root root  19539 Sep 17 14:34 test_20190917_143453.txt
-
-[2019/09/18]
-fix exit procedure
